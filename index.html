@@ -1072,7 +1072,7 @@
             <div class="api-content">
                 <div class="api-body">
                     <p class="description">
-                        Mint new OK402 tokens according to OK402 protocol rules. Each mint costs 0.001 OKB and generates 50,000 OK402 tokens.
+                        Mint new OK402 tokens according to OK402 protocol rules. Each mint costs 0.001 OKB and generates 1,000 OK402 tokens.
                     </p>
                     <div class="params-section">
                         <h3 class="params-title">Mint OK402 Tokens</h3>
@@ -1100,7 +1100,7 @@
                                     Tokens to receive
                                 </label>
                                 <div style="padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 16px; font-weight: 600; color: var(--accent-color);" id="tokensToReceiveDisplay">
-                                    50,000 OK402
+                                    1,000 OK402
                                 </div>
                             </div>
                             <button onclick="executeMint()" 
@@ -1704,7 +1704,7 @@
         // 更新代币接收数量显示
         function updateTokensToReceive() {
             const amount = parseFloat(document.getElementById('mintAmount').value) || 0;
-            const tokens = Math.floor(amount / 0.001) * 50000;
+            const tokens = Math.floor(amount / 0.001) * 1000;
             document.getElementById('tokensToReceiveDisplay').textContent = tokens.toLocaleString() + ' OK402';
         }
 
@@ -1826,6 +1826,5 @@
     </script>
 </body>
 </html>
-
 
 
