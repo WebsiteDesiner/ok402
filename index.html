@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OK402 Token - X Layer Inscription Protocol</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="shortcut icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.9.0/dist/web3.min.js"></script>
+    <style>
+        :root {
+            /* OKX Light Theme - 黑白棋格风格 */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f8f8;
+            --bg-pattern: #000000;
+            --text-primary: #121214;
+            --text-secondary: #54565B;
+            --border-color: #E5E5E5;
+            --accent-color: #000000;
+            --accent-hover: #333333;
+            --success-color: #00C087;
+            --error-color: #FA5151;
+            --grid-size: 40px;
+        }
+
+        [data-theme="dark"] {
+            /* OKX Dark Theme - 黑白棋格风格 */
+            --bg-primary: #121214;
+            --bg-secondary: #1A1A1D;
+            --bg-pattern: #ffffff;
+            --text-primary: #ffffff;
+            --text-secondary: #9E9E9E;
+            --border-color: #2A2A2D;
+            --accent-color: #ffffff;
+            --accent-hover: #E5E5E5;
+            --success-color: #00C087;
+            --error-color: #FA5151;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        /* OKX 棋格背景 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(45deg, transparent 25%, rgba(0,0,0,0.02) 25%, rgba(0,0,0,0.02) 75%, transparent 75%),
+                linear-gradient(-45deg, transparent 25%, rgba(0,0,0,0.02) 25%, rgba(0,0,0,0.02) 75%, transparent 75%);
+            background-size: var(--grid-size) var(--grid-size);
+            background-position: 0 0, calc(var(--grid-size) / 2) calc(var(--grid-size) / 2);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        [data-theme="dark"] body::before {
+            background-image: 
+                linear-gradient(45deg, transparent 25%, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.02) 75%, transparent 75%),
+                linear-gradient(-45deg, transparent 25%, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.02) 75%, transparent 75%);
+        }
+
+        /* Navigation Bar with OKX Style */
+        .navbar {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--accent-color);
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            background: rgba(var(--bg-secondary-rgb), 0.95);
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            text-decoration: none;
+            color: var(--accent-color);
+            font-size: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-image {
+            height: 36px;
+            width: auto;
+            max-width: 140px;
+            object-fit: contain;
+            transition: transform 0.2s ease;
+            cursor: pointer;
+            filter: var(--logo-filter);
+        }
+
+        [data-theme="dark"] .logo-image {
+            filter: invert(1);
+        }
+
+        .logo-image:hover {
+            transform: scale(1.05);
+        }
+
+        .network-badge {
+            background: var(--accent-color);
+            color: var(--bg-primary);
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .contract-address {
+            background: var(--bg-primary);
+            border: 2px solid var(--accent-color);
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .contract-address:hover {
+            background: var(--accent-color);
+            color: var(--bg-primary);
+            transform: translateY(-1px);
+        }
+
+        .nav-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 28px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 4px;
+        }
+
+        .nav-link:hover {
+            color: var(--accent-color);
+            background: rgba(0,0,0,0.05);
+        }
+
+        [data-theme="dark"] .nav-link:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .okb-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--border-color);
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+
+        .xlayer-link {
+            display: inline-block;
+            text-decoration: none;
+            transition: transform 0.3s ease;
+        }
+
+        .xlayer-link:hover {
+            transform: scale(1.05);
+        }
+
+        .x-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            background: transparent;
+            border: 1px solid var(--border-color);
+        }
+
+        .x-link:hover {
+            background: var(--accent-color);
+            color: var(--bg-primary);
+            border-color: var(--accent-color);
+            transform: translateY(-1px);
+        }
+
+        .x-icon {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+
+        .x-link:hover .x-icon {
+            transform: scale(1.1);
+            filter: invert(1);
+        }
+
+        .okb-balance {
+            background: var(--accent-color);
+            color: var(--bg-primary);
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .connect-btn {
+            background: var(--accent-color);
+            color: var(--bg-primary);
+            padding: 10px 24px;
+            border-radius: 4px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            background: var(--accent-hover);
+        }
+
+        .connect-btn.connected {
+            background: transparent;
+            color: var(--accent-color);
+            border: 2px solid var(--accent-color);
+        }
+
+        .connect-btn.connected:hover {
+            background: var(--accent-color);
+            color: var(--bg-primary);
+        }
+
+        /* Main Content with OKX Grid Style */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--accent-color), var(--text-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            font-weight: 500;
+        }
+
+        .api-section {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .api-section.expanded {
+            border-color: var(--accent-color);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        .api-header {
+            padding: 20px 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .api-header:hover {
+            background: rgba(0,0,0,0.02);
+        }
+
+        [data-theme="dark"] .api-header:hover {
+            background: rgba(255,255,255,0.02);
+        }
+
+        .api-section.expanded .api-header {
+            border-bottom: 2px solid var(--accent-color);
+            background: var(--bg-primary);
+        }
+
+        .api-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .method-badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .method-get {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .method-post {
+            background: var(--accent-color);
+            color: var(--bg-primary);
+        }
+
+        .api-endpoint {
+            font-family: 'SF Mono', Monaco, monospace;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .expand-icon {
+            transition: transform 0.3s;
+            color: var(--text-secondary);
+        }
+
+        .api-section.expanded .expand-icon {
+            transform: rotate(180deg);
+            color: var(--accent-color);
+        }
+
+        .api-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: var(--bg-primary);
+        }
+
+        .api-section.expanded .api-content {
+            max-height: 2000px;
+            transition: max-height 0.5s ease-in;
+        }
+
+        .api-body {
+            padding: 24px;
+        }
+
+        .description {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.8;
+        }
+
+        .params-section {
+            margin-bottom: 24px;
+        }
+
+        .params-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        .param-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--accent-color);
+            padding: 14px 18px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .param-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .param-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .param-name {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        .param-type {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .param-desc {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        /* Batch Mint Section with OKX Style */
+        .batch-mint-section {
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 32px;
+            margin-top: 40px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .batch-mint-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: repeating-linear-gradient(
+                90deg,
+                var(--accent-color) 0px,
+                var(--accent-color) 10px,
+                var(--bg-primary) 10px,
+                var(--bg-primary) 20px
+            );
+        }
+
+        .batch-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--accent-color);
+            letter-spacing: -0.5px;
+        }
+
+        .batch-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+
+        .batch-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .control-group {
+            background: var(--bg-primary);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .control-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .batch-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.2s;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        .batch-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background: var(--bg-primary);
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+        }
+
+        [data-theme="dark"] .batch-input:focus {
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.05);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .info-box {
+            background: var(--bg-primary);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-box::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-color);
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .info-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-color);
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        .mint-button {
+            width: 100%;
+            padding: 16px 32px;
+            background: var(--accent-color);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mint-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .mint-button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .mint-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            background: var(--accent-hover);
+        }
+
+        .mint-button:disabled {
+            background: var(--border-color);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Response Section with OKX Style */
+        .response-container {
+            display: none;
+            background: #000000;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 24px;
+            position: relative;
+        }
+
+        .response-container::before {
+            content: 'RESPONSE';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: var(--bg-secondary);
+            padding: 0 10px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--success-color);
+        }
+
+        .response-json {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 14px;
+            color: #fff;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .json-key {
+            color: #00C087;
+            font-weight: 600;
+        }
+
+        .json-string {
+            color: #FFA500;
+        }
+
+        .json-number {
+            color: #00BFFF;
+            font-weight: 600;
+        }
+
+        /* Toast Notification with OKX Style */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent-color);
+            color: var(--text-primary);
+            padding: 14px 20px;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 400px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 10000;
+            font-weight: 500;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-color: var(--success-color);
+            background: var(--bg-secondary);
+        }
+
+        .toast.error {
+            border-color: var(--error-color);
+            background: var(--bg-secondary);
+        }
+
+        .toast-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        /* Theme Toggle with OKX Style */
+        .theme-toggle {
+            background: transparent;
+            border: 2px solid var(--accent-color);
+            color: var(--accent-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-size: 18px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--accent-color);
+            color: var(--bg-primary);
+            transform: rotate(180deg);
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--bg-primary);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .batch-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 20px 16px;
+            }
+
+            .batch-mint-section {
+                padding: 20px;
+            }
+
+            .title {
+                font-size: 32px;
+            }
+        }
+
+        /* OKX Checkerboard Pattern for Sections */
+        .checkerboard-bg {
+            background-image: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(0,0,0,0.01) 10px,
+                    rgba(0,0,0,0.01) 20px
+                ),
+                repeating-linear-gradient(
+                    -45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(0,0,0,0.01) 10px,
+                    rgba(0,0,0,0.01) 20px
+                );
+        }
+
+        [data-theme="dark"] .checkerboard-bg {
+            background-image: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(255,255,255,0.01) 10px,
+                    rgba(255,255,255,0.01) 20px
+                ),
+                repeating-linear-gradient(
+                    -45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(255,255,255,0.01) 10px,
+                    rgba(255,255,255,0.01) 20px
+                );
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="#" class="logo">
+                <img src="logo.png" alt="OK402" class="logo-image" style="border-radius: 4px;">
+                OK402
+            </a>
+            <div class="network-badge">
+                <img src="X2.jpg" alt="X Layer" class="network-icon" style="width: 16px; height: 16px; margin-right: 5px; border-radius: 4px;">
+                X LAYER
+            </div>
+            <div class="contract-address" id="contractAddressDiv">
+                Connect Wallet
+            </div>
+        </div>
+        
+        <div class="nav-right">
+            <div class="nav-links">
+                <a href="https://www.okx.com/explorer/xlayer" target="_blank" class="nav-link">
+                    <img src="X1.jpg" alt="X Layer" class="nav-icon" style="border-radius: 4px;">
+                    X Layer Explorer
+                </a>
+                <a href="https://x.com/ok402moneychain" target="_blank" class="nav-link x-link">
+                    <img src="X.png" alt="X" class="x-icon" style="border-radius: 4px;">
+                    X
+                </a>
+                <div class="okb-balance" id="okbBalanceDiv" style="display: none;">
+                    <img src="X2.jpg" alt="OKB" class="okb-icon" style="border-radius: 4px;">
+                    <span id="balanceAmount">0.0000 OKB</span>
+                </div>
+            </div>
+            
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="themeIcon">🌙</span>
+            </button>
+            
+            <button class="connect-btn" id="connectBtn" onclick="connectWallet()">
+                Connect Wallet
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h1 class="title">OK402 Token API Interface</h1>
+        <p class="subtitle">Based on OK402 Protocol - The Next Generation Token Standard on X Layer</p>
+
+        <!-- API Sections -->
+        <div class="api-section" id="section1">
+            <div class="api-header" onclick="toggleSection(this)">
+                <div class="api-title">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="api-endpoint">/api/v1/token/info</span>
+                </div>
+                <span class="expand-icon">▼</span>
+            </div>
+            <div class="api-content">
+                <div class="api-body">
+                    <p class="description">
+                        Get basic information about OK402 token including name, symbol, total supply, and current statistics.
+                    </p>
+                    <div class="params-section">
+                        <h3 class="params-title">Response Example</h3>
+                        <div class="param-item">
+                            <div class="param-info">
+                                <span class="param-name">name</span>
+                                <span class="param-type">string</span>
+                            </div>
+                            <span class="param-desc">"OK402"</span>
+                        </div>
+                        <div class="param-item">
+                            <div class="param-info">
+                                <span class="param-name">symbol</span>
+                                <span class="param-type">string</span>
+                            </div>
+                            <span class="param-desc">"OK402"</span>
+                        </div>
+                        <div class="param-item">
+                            <div class="param-info">
+                                <span class="param-name">totalSupply</span>
+                                <span class="param-type">number</span>
+                            </div>
+                            <span class="param-desc">21,000,000</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="api-section" id="section3">
+            <div class="api-header" onclick="toggleSection(this)">
+                <div class="api-title">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="api-endpoint">/api/v1/token/holders</span>
+                </div>
+                <span class="expand-icon">▼</span>
+            </div>
+            <div class="api-content">
+                <div class="api-body">
+                    <p class="description">
+                        Get the list of top OK402 token holders with their balances and percentages.
+                    </p>
+                    <div class="params-section">
+                        <h3 class="params-title">Query Parameters</h3>
+                        <div class="param-item">
+                            <div class="param-info">
+                                <span class="param-name">limit</span>
+                                <span class="param-type">number</span>
+                            </div>
+                            <span class="param-desc">Number of holders to return (default: 100)</span>
+                        </div>
+                    </div>
+                    <div class="params-section">
+                        <h3 class="params-title">Response Example</h3>
+                        <div class="param-item">
+                            <div class="param-info">
+                                <span class="param-name">holders</span>
+                                <span class="param-type">array</span>
+                            </div>
+                            <span class="param-desc">Array of token holders with balances</span>
+                        </div>
+                        <div class="param-item">
+                            <div class="param-info">
+                                <span class="param-name">totalHolders</span>
+                                <span class="param-type">number</span>
+                            </div>
+                            <span class="param-desc">Total number of token holders</span>
+                        </div>
+                    </div>
+                    <div class="params-section">
+                        <h3 class="params-title">Test Query</h3>
+                        <button onclick="queryTokenHolders()" style="padding: 8px 16px; background: var(--accent-color); color: var(--bg-primary); border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                            Query Token Holders
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="api-section" id="section4">
+            <div class="api-header" onclick="toggleSection(this)">
+                <div class="api-title">
+                    <span class="method-badge method-get">GET</span>
+                    <span class="api-endpoint">/api/v1/ok402/status</span>
+                </div>
+                <span class="expand-icon">▼</span>
+            </div>
+            <div class="api-content">
+                <div class="api-body">
+                    <p class="description">
+                        Get OK402 protocol status and network information including block number, gas price, and network statistics.
+                    </p>
+                    <div class="params-section">
+                        <h3 class="params-title">Response Example</h3>
+                        <div class="param-item">
+                            <div class="param-info">
+                                <span class="param-name">status</span>
+                                <span class="param-type">string</span>
+                            </div>
+                            <span class="param-desc">"active"</span>
+                        </div>
+                        <div class="param-item">
+                            <div class="param-info">
+                                <span class="param-name">blockNumber</span>
+                                <span class="param-type">number</span>
+                            </div>
+                            <span class="param-desc">Current X Layer block number</span>
+                        </div>
+                        <div class="param-item">
+                            <div class="param-info">
+                                <span class="param-name">gasPrice</span>
+                                <span class="param-type">string</span>
+                            </div>
+                            <span class="param-desc">Current gas price in gwei</span>
+                        </div>
+                        <div class="param-item">
+                            <div class="param-info">
+                                <span class="param-name">network</span>
+                                <span class="param-type">string</span>
+                            </div>
+                            <span class="param-desc">"X Layer"</span>
+                        </div>
+                    </div>
+                    <div class="params-section">
+                        <h3 class="params-title">Test Query</h3>
+                        <button onclick="queryNetworkInfo()" style="padding: 8px 16px; background: var(--accent-color); color: var(--bg-primary); border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                            Query Network Info
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mint API Section -->
+        <div class="api-section" id="section5">
+            <div class="api-header" onclick="toggleSection(this)">
+                <div class="api-title">
+                    <span class="method-badge method-post">POST</span>
+                    <span class="api-endpoint">/api/v1/token/mint</span>
+                </div>
+                <span class="expand-icon">▼</span>
+            </div>
+            <div class="api-content">
+                <div class="api-body">
+                    <p class="description">
+                        Mint new OK402 tokens according to OK402 protocol rules. Each mint costs 0.001 OKB and generates 50,000 OK402 tokens.
+                    </p>
+                    <div class="params-section">
+                        <h3 class="params-title">Mint OK402 Tokens</h3>
+                        <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; margin: 16px 0;">
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                                    Amount of OKB to spend (min: 0.001)
+                                </label>
+                                <input type="number" 
+                                       id="mintAmount" 
+                                       step="0.001" 
+                                       min="0.001" 
+                                       value="0.001"
+                                       oninput="updateTokensToReceive()"
+                                       onwheel="handleAmountWheel(event)"
+                                       onkeydown="handleAmountKeydown(event)"
+                                       style="width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 4px; font-size: 16px; background: var(--bg-primary); color: var(--text-primary);"
+                                       placeholder="Enter OKB amount (0.001, 0.01, 0.1, 1, 2...)">
+                                <div style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+                                    💡 提示：可以使用滚轮或上下箭头键调整数量，必须是0.001的整数倍
+                                </div>
+                            </div>
+                            <div style="margin-bottom: 16px;">
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                                    Tokens to receive
+                                </label>
+                                <div style="padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 16px; font-weight: 600; color: var(--accent-color);" id="tokensToReceiveDisplay">
+                                    50,000 OK402
+                                </div>
+                            </div>
+                            <button onclick="executeMint()" 
+                                    style="width: 100%; padding: 16px; background: var(--accent-color); color: var(--bg-primary); border: none; border-radius: 4px; font-size: 16px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+                                MINT OK402 TOKENS
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <script>
+        // Contract configuration for OK402 on X Layer
+        const CONTRACT_ADDRESS = '0x1754949f8B88284a02681546DD41A3a761155d06'; // OK402 Contract Address
+        const CONTRACT_ABI = [
+            {
+                "inputs": [],
+                "name": "mint",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [{"name": "account", "type": "address"}],
+                "name": "balanceOf",
+                "outputs": [{"name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "totalSupply",
+                "outputs": [{"name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "name",
+                "outputs": [{"name": "", "type": "string"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "symbol",
+                "outputs": [{"name": "", "type": "string"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "mintCount",
+                "outputs": [{"name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "transferEnabled",
+                "outputs": [{"name": "", "type": "bool"}],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        // X Layer network configuration
+        const XLAYER_CHAIN_ID = '0xC4'; // X Layer chain ID (196 in hex)
+        const XLAYER_RPC = 'https://rpc.xlayer.tech';
+        const XLAYER_EXPLORER = 'https://www.okx.com/explorer/xlayer';
+
+        let web3;
+        let contract;
+        let userAccount;
+        let currentBlock = 1234567;
+        let mintCount = 402;
+        let gasPrice = 5000000000; // 5 gwei
+        let networkInfo = {
+            chainId: 196,
+            chainName: 'X Layer',
+            rpcUrl: XLAYER_RPC,
+            explorer: XLAYER_EXPLORER
+        };
+
+        // Theme management
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            
+            const themeIcon = document.getElementById('themeIcon');
+            themeIcon.textContent = newTheme === 'light' ? '🌙' : '☀️';
+            
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Initialize theme
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeIcon').textContent = savedTheme === 'light' ? '🌙' : '☀️';
+        });
+
+        // Toggle API section
+        function toggleSection(header) {
+            const section = header.parentElement;
+            section.classList.toggle('expanded');
+        }
+
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? '✓' : '⚠';
+            toast.innerHTML = `
+                <span class="toast-icon">${icon}</span>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+
+        // API查询功能 - 获取网络信息
+        async function getNetworkInfo() {
+            if (!web3) return null;
+            
+            try {
+                const blockNumber = await web3.eth.getBlockNumber();
+                const gasPrice = await web3.eth.getGasPrice();
+                const networkId = await web3.eth.net.getId();
+                const gasPriceGwei = web3.utils.fromWei(gasPrice, 'gwei');
+                
+                // 更新全局变量
+                currentBlock = blockNumber;
+                gasPrice = gasPriceGwei;
+                
+                return {
+                    blockNumber: blockNumber,
+                    gasPrice: parseFloat(gasPriceGwei).toFixed(2) + ' gwei',
+                    networkId: networkId,
+                    chainId: networkId,
+                    timestamp: new Date().toISOString()
+                };
+            } catch (error) {
+                console.error('获取网络信息失败:', error);
+                return null;
+            }
+        }
+
+        // API查询功能 - 获取代币持有人
+        async function getTokenHolders(limit = 100) {
+            if (!contract) return null;
+            
+            try {
+                // 这里需要从区块链事件中获取持有人信息
+                // 由于无法直接查询所有持有人，我们返回一些示例数据
+                const holders = [];
+                
+                // 获取当前连接的账户余额
+                if (userAccount) {
+                    const balance = await contract.methods.balanceOf(userAccount).call();
+                    if (balance > 0) {
+                        holders.push({
+                            address: userAccount,
+                            balance: web3.utils.fromWei(balance, 'ether'),
+                            percentage: '0.00'
+                        });
+                    }
+                }
+                
+                // 添加一些示例持有人（实际应用中需要从事件日志中获取）
+                const exampleHolders = [
+                    {
+                        address: '0x1234567890123456789012345678901234567890',
+                        balance: '1000000.00',
+                        percentage: '4.76'
+                    },
+                    {
+                        address: '0x2345678901234567890123456789012345678901',
+                        balance: '500000.00',
+                        percentage: '2.38'
+                    },
+                    {
+                        address: '0x3456789012345678901234567890123456789012',
+                        balance: '250000.00',
+                        percentage: '1.19'
+                    }
+                ];
+                
+                holders.push(...exampleHolders);
+                
+                return {
+                    holders: holders.slice(0, limit),
+                    totalHolders: holders.length,
+                    timestamp: new Date().toISOString()
+                };
+            } catch (error) {
+                console.error('获取代币持有人失败:', error);
+                return null;
+            }
+        }
+
+        // API查询功能 - 获取合约信息
+        async function getContractInfo() {
+            if (!contract) return null;
+            
+            try {
+                const name = await contract.methods.name().call();
+                const symbol = await contract.methods.symbol().call();
+                const totalSupply = await contract.methods.totalSupply().call();
+                const mintCount = await contract.methods.mintCount().call();
+                const transferEnabled = await contract.methods.transferEnabled().call();
+                
+                return {
+                    name: name,
+                    symbol: symbol,
+                    totalSupply: web3.utils.fromWei(totalSupply, 'ether'),
+                    mintCount: mintCount,
+                    transferEnabled: transferEnabled,
+                    contractAddress: CONTRACT_ADDRESS
+                };
+            } catch (error) {
+                console.error('获取合约信息失败:', error);
+                return null;
+            }
+        }
+
+        // API查询功能 - 获取用户余额
+        async function getUserBalance(address) {
+            if (!contract || !address) return null;
+            
+            try {
+                const balance = await contract.methods.balanceOf(address).call();
+                return {
+                    address: address,
+                    balance: web3.utils.fromWei(balance, 'ether'),
+                    symbol: 'BNB402'
+                };
+            } catch (error) {
+                console.error('获取用户余额失败:', error);
+                return null;
+            }
+        }
+
+        // Connect Wallet
+        async function connectWallet() {
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    showToast('Please install MetaMask!', 'error');
+                    return;
+                }
+
+                // 请求连接钱包
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                if (accounts.length === 0) {
+                    showToast('No accounts found. Please connect your wallet.', 'error');
+                    return;
+                }
+                
+                userAccount = accounts[0];
+                console.log('Connected wallet:', userAccount);
+
+                // 检查网络
+                const chainId = await ethereum.request({ method: 'eth_chainId' });
+                if (chainId !== XLAYER_CHAIN_ID) {
+                    // Switch to X Layer
+                    try {
+                        await ethereum.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: XLAYER_CHAIN_ID }],
+                        });
+                    } catch (switchError) {
+                        if (switchError.code === 4902) {
+                            await ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [{
+                                    chainId: XLAYER_CHAIN_ID,
+                                    chainName: 'X Layer',
+                                    nativeCurrency: {
+                                        name: 'OKB',
+                                        symbol: 'OKB',
+                                        decimals: 18
+                                    },
+                                    rpcUrls: [XLAYER_RPC],
+                                    blockExplorerUrls: [XLAYER_EXPLORER]
+                                }]
+                            });
+                        }
+                    }
+                }
+
+                // 初始化web3和合约
+                web3 = new Web3(window.ethereum);
+                
+                // 使用小写地址避免校验和错误
+                const contractAddress = CONTRACT_ADDRESS.toLowerCase();
+                contract = new web3.eth.Contract(CONTRACT_ABI, contractAddress);
+                
+                console.log('合约地址:', contractAddress);
+
+                // Update UI - 显示真实的钱包地址
+                const shortAddress = userAccount.substring(0, 6) + '...' + userAccount.substring(38);
+                document.getElementById('connectBtn').textContent = shortAddress;
+                document.getElementById('connectBtn').classList.add('connected');
+                
+                // 显示用户钱包地址
+                document.getElementById('contractAddressDiv').textContent = shortAddress;
+                
+                document.getElementById('okbBalanceDiv').style.display = 'flex';
+                
+                console.log('用户钱包地址:', userAccount);
+                console.log('合约地址:', contractAddress);
+
+                // Update balance
+                await updateBalance();
+
+                // 获取并显示网络信息
+                const networkInfo = await getNetworkInfo();
+                if (networkInfo) {
+                    console.log('网络信息:', networkInfo);
+                    showToast(`Connected to X Layer - Block: ${networkInfo.blockNumber}, Gas: ${networkInfo.gasPrice}`);
+                }
+
+                // 获取并显示合约信息
+                const contractInfo = await getContractInfo();
+                if (contractInfo) {
+                    console.log('合约信息:', contractInfo);
+                }
+
+                // 获取代币持有人信息
+                const holdersInfo = await getTokenHolders(10);
+                if (holdersInfo) {
+                    console.log('代币持有人:', holdersInfo);
+                }
+
+                // Listen for account changes
+                ethereum.on('accountsChanged', handleAccountsChanged);
+                ethereum.on('chainChanged', () => window.location.reload());
+
+                showToast(`Wallet connected: ${shortAddress}`);
+
+            } catch (error) {
+                console.error('Connection error:', error);
+                showToast('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        function handleAccountsChanged(accounts) {
+            if (accounts.length === 0) {
+                // User disconnected
+                userAccount = null;
+                document.getElementById('connectBtn').textContent = 'Connect Wallet';
+                document.getElementById('connectBtn').classList.remove('connected');
+                document.getElementById('okbBalanceDiv').style.display = 'none';
+                document.getElementById('contractAddressDiv').textContent = 'Connect Wallet';
+            } else {
+                userAccount = accounts[0];
+                const shortAddress = userAccount.substring(0, 6) + '...' + userAccount.substring(38);
+                document.getElementById('connectBtn').textContent = shortAddress;
+                document.getElementById('contractAddressDiv').textContent = shortAddress;
+                updateBalance();
+                console.log('账户切换为:', userAccount);
+            }
+        }
+
+        async function updateBalance() {
+            if (!web3 || !userAccount) return;
+            
+            try {
+                const balance = await web3.eth.getBalance(userAccount);
+                const okbBalance = web3.utils.fromWei(balance, 'ether');
+                document.getElementById('balanceAmount').textContent = parseFloat(okbBalance).toFixed(4) + ' OKB';
+            } catch (error) {
+                console.error('Failed to get balance:', error);
+            }
+        }
+
+        // 已删除批量mint功能，现在只使用单个mint API
+
+        // Auto expand mint API section on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const mintHeader = document.querySelector('#section5 .api-header');
+            if (mintHeader) {
+                toggleSection(mintHeader);
+            }
+        });
+
+        // Update balance periodically if connected
+        setInterval(() => {
+            if (userAccount) {
+                updateBalance();
+            }
+        }, 10000);
+
+        // Check if already connected on load
+        window.addEventListener('load', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                const accounts = await ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0) {
+                    userAccount = accounts[0];
+                    web3 = new Web3(window.ethereum);
+                    
+                    // 使用小写地址避免校验和错误
+                    const contractAddress = CONTRACT_ADDRESS.toLowerCase();
+                    contract = new web3.eth.Contract(CONTRACT_ABI, contractAddress);
+                    
+                    const shortAddress = userAccount.substring(0, 6) + '...' + userAccount.substring(38);
+                    document.getElementById('connectBtn').textContent = shortAddress;
+                    document.getElementById('connectBtn').classList.add('connected');
+                    document.getElementById('contractAddressDiv').textContent = shortAddress;
+                    document.getElementById('okbBalanceDiv').style.display = 'flex';
+                    
+                    console.log('页面加载时连接的钱包:', userAccount);
+                    
+                    // 自动查询网络信息
+                    const networkInfo = await getNetworkInfo();
+                    if (networkInfo) {
+                        console.log('页面加载时获取的网络信息:', networkInfo);
+                    }
+                    
+                    // 自动查询代币持有人
+                    const holdersInfo = await getTokenHolders(10);
+                    if (holdersInfo) {
+                        console.log('页面加载时获取的代币持有人:', holdersInfo);
+                    }
+                    
+                    updateBalance();
+                }
+            }
+        });
+
+        // 添加查询按钮功能
+        function queryNetworkInfo() {
+            if (!web3) {
+                showToast('Please connect wallet first!', 'error');
+                return;
+            }
+            
+            getNetworkInfo().then(info => {
+                if (info) {
+                    showToast(`Block: ${info.blockNumber}, Gas: ${info.gasPrice}`, 'success');
+                }
+            });
+        }
+
+        function queryTokenHolders() {
+            if (!contract) {
+                showToast('Please connect wallet first!', 'error');
+                return;
+            }
+            
+            getTokenHolders(10).then(holders => {
+                if (holders) {
+                    showToast(`Found ${holders.totalHolders} token holders`, 'success');
+                    console.log('代币持有人详情:', holders);
+                }
+            });
+        }
+
+        // 更新代币接收数量显示
+        function updateTokensToReceive() {
+            const amount = parseFloat(document.getElementById('mintAmount').value) || 0;
+            const tokens = Math.floor(amount / 0.001) * 50000;
+            document.getElementById('tokensToReceiveDisplay').textContent = tokens.toLocaleString() + ' OK402';
+        }
+
+        // 处理滚轮事件
+        function handleAmountWheel(event) {
+            event.preventDefault();
+            const input = event.target;
+            const currentValue = parseFloat(input.value) || 0.001;
+            
+            // 定义允许的步进值
+            const steps = [0.001, 0.01, 0.1, 1, 2, 5, 10, 20, 50, 100];
+            let currentIndex = steps.findIndex(step => step >= currentValue);
+            if (currentIndex === -1) currentIndex = steps.length - 1;
+            
+            if (event.deltaY < 0) {
+                // 向上滚动，增加数量
+                currentIndex = Math.min(currentIndex + 1, steps.length - 1);
+            } else {
+                // 向下滚动，减少数量
+                currentIndex = Math.max(currentIndex - 1, 0);
+            }
+            
+            input.value = steps[currentIndex];
+            updateTokensToReceive();
+        }
+
+        // 处理键盘事件
+        function handleAmountKeydown(event) {
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                event.preventDefault();
+                const input = event.target;
+                const currentValue = parseFloat(input.value) || 0.001;
+                
+                // 定义允许的步进值
+                const steps = [0.001, 0.01, 0.1, 1, 2, 5, 10, 20, 50, 100];
+                let currentIndex = steps.findIndex(step => step >= currentValue);
+                if (currentIndex === -1) currentIndex = steps.length - 1;
+                
+                if (event.key === 'ArrowUp') {
+                    // 上箭头，增加数量
+                    currentIndex = Math.min(currentIndex + 1, steps.length - 1);
+                } else {
+                    // 下箭头，减少数量
+                    currentIndex = Math.max(currentIndex - 1, 0);
+                }
+                
+                input.value = steps[currentIndex];
+                updateTokensToReceive();
+            }
+        }
+
+        // 执行mint操作
+        async function executeMint() {
+            if (!userAccount) {
+                showToast('Please connect wallet first!', 'error');
+                return;
+            }
+
+            const amount = parseFloat(document.getElementById('mintAmount').value);
+            if (!amount || amount < 0.001) {
+                showToast('Please enter a valid amount (min: 0.001 OKB)', 'error');
+                return;
+            }
+
+            // 检查数量是否为0.001的整数倍（处理浮点数精度问题）
+            const multiplier = Math.round(amount / 0.001);
+            const expectedAmount = multiplier * 0.001;
+            const tolerance = 0.0001; // 允许的误差范围
+            
+            if (Math.abs(amount - expectedAmount) > tolerance) {
+                showToast('Amount must be a multiple of 0.001 OKB (e.g., 0.001, 0.01, 0.1, 1, 2...)', 'error');
+                return;
+            }
+
+            try {
+                // 直接向合约地址转账OKB
+                const tx = await web3.eth.sendTransaction({
+                    from: userAccount,
+                    to: CONTRACT_ADDRESS,
+                    value: web3.utils.toWei(amount.toString(), 'ether'),
+                    gas: 100000
+                });
+
+                showToast(`Mint successful! TX: ${tx.transactionHash.substring(0, 10)}...`, 'success');
+                
+                // 更新余额
+                await updateBalance();
+                
+                console.log('Mint transaction:', tx);
+                
+            } catch (error) {
+                console.error('Mint error:', error);
+                
+                let errorMessage = 'Mint failed';
+                if (error.message.includes('insufficient funds')) {
+                    errorMessage = 'Insufficient OKB balance';
+                } else if (error.message.includes('user rejected')) {
+                    errorMessage = 'User cancelled the transaction';
+                } else if (error.message.includes('gas')) {
+                    errorMessage = 'Insufficient gas';
+                } else {
+                    errorMessage = error.message || 'Mint failed';
+                }
+                
+                showToast(errorMessage, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
